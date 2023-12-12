@@ -48,7 +48,7 @@ def train_model(df):
     
     return model, label_encoder
 
-def save_model_to_blob(model, label_encoder, container_name, blob_name):
+def save_model_to_blob(model, label_encoder, container_name, blob_names):
     # Save the model to Blob Storage
     connect_str = "DefaultEndpointsProtocol=https;AccountName=creditproject;AccountKey=ki155kFi7Q5RgnaOCui+rRKqKFW9D/8n9SL90GnCa9ZTNg8sVBdZC35wg0Y1CxC392oCLXkoBpRB+AStebLk7w==;EndpointSuffix=core.windows.net"
     
@@ -62,16 +62,17 @@ def save_model_to_blob(model, label_encoder, container_name, blob_name):
     # Get a reference to the container you want to upload to
     container_client = blob_service_client.get_container_client(container_name)
     # Create a blob client using the container_client
-    blob_client = container_client.get_blob_client(blob_name)
+    blob_client = container_client.get_blob_client(blob_names[0])
     # Upload the stream
     blob_client.upload_blob(buffer, overwrite=True)
-    print(f"Stream successfully uploaded to {blob_name} in container {container_name}.")
+    print(f"Stream successfully uploaded to {blob_names[0]} in container {container_name}.")
 
     # Save the fitted LabelEncoder to a pickle file in blob storage
-    # Upload the file
-    with open("label_encoder.pkl", "wb") as file:
+    # Upload the file locally
+    blob_client = container_client.get_blob_client(blob_names[1])
+    with open(blob_names[1], "wb") as file:
         pickle.dump(label_encoder, file)
-    with open('label_encoder.pkl', "rb") as data:
+    with open(blob_names[1], "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
 
     print(f"File label_encoder.pkl successfully uploaded in container {container_name}.")
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     # print(f"Blob renamed to: {new_blob_name}")
     # new_blob_name = rename_old_model(container_name='models', blob_name='label_encoder', extension='pkl')
     # print(f"Blob renamed to: {new_blob_name}")
-    save_model_to_blob(model=model, label_encoder=label_encoder, container_name='models', blob_name='model.xgb')
+    save_model_to_blob(model=model, label_encoder=label_encoder, container_name='models', blob_names=('model.xgb', 'label_encoder.pkl'))
 
 
 
